@@ -1,15 +1,24 @@
-// The look plan, in one place. Six values and one accent hue; the lighting makes every
-// shade the game needs, so no other colour appears in the code. The same six names are
-// the CSS custom properties in index.html.
+// Ashfall Yard — the look plan in one place. A dusk foundry yard: warm sand and
+// rusted steel under a low orange sun, with one cool teal accent for the player's
+// team and readable UI. Every colour in the game comes from these names.
 export const PALETTE = {
-  canvas: '#14161a',
-  surface: '#1e2228',
-  hairline: '#2c323a',
-  ink: '#e9e6df',
-  muted: '#98a0a8',
-  accent: '#f0a830',
+  sky: '#4a3826',
+  ground: '#7d6748',
+  groundDark: '#5d4c36',
+  wall: '#6e5b41',
+  wallDark: '#4a3d2c',
+  crate: '#8a6b3f',
+  containerRust: '#9c4a28',
+  containerTeal: '#2e6f6a',
+  hazard: '#e8b93c',
+  accent: '#2ec4b6',
+  ink: '#f2ead9',
+  muted: '#b3a58d',
+  enemy: '#d95f43',
+  ally: '#2ec4b6',
+  bomb: '#e8b93c',
 };
 
-export function shade(name) {
+export function hex(name) {
   return PALETTE[name];
 }

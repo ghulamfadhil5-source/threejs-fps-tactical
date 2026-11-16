@@ -1,74 +1,132 @@
-// The DOM HUD: crosshair, hit marker, ammo, score and the one overlay panel. It never touches
-// the simulation; main.js pushes numbers in and reads the play callback out.
+// The DOM HUD: health, ammo, money, round timer, score, bomb status, kill feed,
+// buy menu and the overlay panels. It never touches the simulation; main.js pushes
+// numbers in and reads the play callback out. Updates are cached so the DOM is
+// only written when a value actually changes.
 const COPY = {
   start: {
-    title: 'Greybox Range',
-    copy: 'A plain room, one rifle and four targets. Click to play.',
+    title: 'ASHFALL YARD',
+    copy: 'A foundry yard at dusk. Plant the charge at Site A or Site B — or wipe the defenders out. First to 5 rounds takes the yard.',
     action: 'Click to play',
   },
   paused: {
-    title: 'Greybox Range',
+    title: 'ASHFALL YARD',
     copy: 'Paused. Click to resume.',
     action: 'Click to resume',
   },
   end: {
-    title: 'Range cleared',
-    copy: 'Every target is down.',
+    title: 'Round over',
+    copy: '',
+    action: 'Next round',
+  },
+  match: {
+    title: 'Match over',
+    copy: '',
     action: 'Play again',
   },
 };
 
 export function createHud() {
-  const overlay = document.getElementById('overlay');
-  const title = document.getElementById('overlay-title');
-  const copy = document.getElementById('overlay-copy');
-  const play = document.getElementById('play');
-  const ammo = document.getElementById('ammo');
-  const ammoMag = document.getElementById('ammo-mag');
-  const ammoReserve = document.getElementById('ammo-reserve');
-  const scoreValue = document.getElementById('score-value');
-  const hitmarker = document.getElementById('hitmarker');
+  const $ = (id) => document.getElementById(id);
+  const overlay = $('overlay');
+  const title = $('overlay-title');
+  const copy = $('overlay-copy');
+  const play = $('play');
+  const ammoMag = $('ammo-mag');
+  const ammoReserve = $('ammo-reserve');
+  const ammoEl = $('ammo');
+  const weaponName = $('weapon-name');
+  const healthFill = $('health-fill');
+  const healthNum = $('health-num');
+  const moneyEl = $('money');
+  const timerEl = $('timer');
+  const scoreEl = $('score-value');
+  const roundEl = $('round-value');
+  const bombEl = $('bomb-status');
+  const feedEl = $('feed');
+  const bannerEl = $('banner');
+  const buyEl = $('buy-menu');
+  const crosshair = $('crosshair');
+  const hitmarker = $('hitmarker');
+  const plantBar = $('plant-bar');
+  const plantFill = $('plant-fill');
   let hitTimer = 0;
-  let lastMag = -1;
-  let lastReserve = -1;
-  let lastScore = -1;
+  let bannerTimer = 0;
+  const cache = {};
+
+  function setText(el, key, value) {
+    if (cache[key] === value) return;
+    cache[key] = value;
+    el.textContent = value;
+  }
 
   return {
-    setAmmo(mag, reserve) {
-      if (mag === lastMag && reserve === lastReserve) return;
-      lastMag = mag;
-      lastReserve = reserve;
-      ammoMag.textContent = String(mag);
-      ammoReserve.textContent = `/ ${reserve}`;
-      ammo.classList.toggle('empty', mag === 0);
+    setAmmo(mag, reserve, name, grenades) {
+      setText(ammoMag, 'mag', String(mag));
+      setText(ammoReserve, 'reserve', `/ ${reserve}`);
+      setText(weaponName, 'weapon', `${name}  ·  grenades ${grenades}`);
+      ammoEl.classList.toggle('empty', mag === 0);
     },
-    setScore(value) {
-      if (value === lastScore) return;
-      lastScore = value;
-      scoreValue.textContent = String(value);
+    setHealth(hp) {
+      const v = Math.max(0, Math.round(hp));
+      setText(healthNum, 'hp', String(v));
+      if (cache.hpFill !== v) {
+        cache.hpFill = v;
+        healthFill.style.width = `${v}%`;
+        healthFill.classList.toggle('low', v <= 30);
+      }
+    },
+    setMoney(money) { setText(moneyEl, 'money', `$${money}`); },
+    setTimer(seconds, phase) {
+      const s = Math.max(0, Math.ceil(seconds));
+      const mm = Math.floor(s / 60);
+      const ss = String(s % 60).padStart(2, '0');
+      setText(timerEl, 'timer', `${mm}:${ss}`);
+      timerEl.classList.toggle('buy', phase === 'buy');
+    },
+    setScore(us, them) { setText(scoreEl, 'score', `${us} — ${them}`); },
+    setRound(round) { setText(roundEl, 'round', `ROUND ${round}`); },
+    setBomb(text, planted) {
+      setText(bombEl, 'bomb', text);
+      bombEl.classList.toggle('planted', !!planted);
+    },
+    setCrosshairGap(px) {
+      crosshair.style.setProperty('--gap', `${px}px`);
     },
     hitMarker(killed, holdMs = 90) {
       hitmarker.classList.add('on');
-      hitmarker.style.transform = killed ? 'translate(-50%, -50%) rotate(45deg) scale(1.25)' : '';
+      hitmarker.classList.toggle('kill', !!killed);
       clearTimeout(hitTimer);
-      hitTimer = setTimeout(() => {
-        hitmarker.classList.remove('on');
-        hitmarker.style.transform = '';
-      }, holdMs);
+      hitTimer = setTimeout(() => hitmarker.classList.remove('on', 'kill'), holdMs);
     },
-    showOverlay(mode, score) {
+    feed(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      feedEl.prepend(div);
+      while (feedEl.children.length > 5) feedEl.removeChild(feedEl.lastChild);
+      setTimeout(() => div.remove(), 6000);
+    },
+    banner(text, ms = 2600) {
+      bannerEl.textContent = text;
+      bannerEl.classList.add('show');
+      clearTimeout(bannerTimer);
+      bannerTimer = setTimeout(() => bannerEl.classList.remove('show'), ms);
+    },
+    showBuy(show) { buyEl.hidden = !show; },
+    setPlant(progress, label) {
+      if (progress <= 0) { plantBar.hidden = true; return; }
+      plantBar.hidden = false;
+      plantFill.style.width = `${Math.round(progress * 100)}%`;
+      $('plant-label').textContent = label;
+    },
+    showOverlay(mode, detail) {
       const text = COPY[mode];
       title.textContent = text.title;
-      copy.textContent = mode === 'end' ? `${text.copy} You scored ${score}.` : text.copy;
+      copy.textContent = mode === 'end' || mode === 'match' ? detail : text.copy;
       play.textContent = text.action;
       overlay.hidden = false;
       play.focus();
     },
-    hideOverlay() {
-      overlay.hidden = true;
-    },
-    onPlay(handler) {
-      play.addEventListener('click', handler);
-    },
+    hideOverlay() { overlay.hidden = true; },
+    onPlay(handler) { play.addEventListener('click', handler); },
   };
 }
