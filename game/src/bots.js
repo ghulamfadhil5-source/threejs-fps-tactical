@@ -202,6 +202,8 @@ export function createBots(scene, colliders, shootables, opts) {
     let speed = BOT_SPEED;
     if (foe) {
       // Face the foe; strafe sideways while firing in bursts.
+      // Being drawn into a fight interrupts any defuse channel in progress.
+      bot.defuseAt = 0;
       const ang = Math.atan2(-(foe.pos.x - bot.position.x), -(foe.pos.z - bot.position.z));
       bot.yaw = ang;
       if (now > bot.strafeAt) { bot.strafeDir *= -1; bot.strafeAt = now + 0.7 + random() * 0.8; }
@@ -286,8 +288,9 @@ export function createBots(scene, colliders, shootables, opts) {
   function fireAt(bot, foe, dist, ctx) {
     const muzzle = new THREE.Vector3(bot.position.x, bot.position.y + 1.35, bot.position.z);
     const aim = new THREE.Vector3(foe.pos.x, foe.pos.y + (foe.crouch ? 1.0 : 1.35), foe.pos.z);
-    // Hit chance falls with distance and with the target's speed; crouching helps.
-    let p = 0.55 - dist * 0.011 - foe.speed * 0.035 + (foe.crouch ? 0.06 : 0);
+    // Hit chance falls with distance and with the target's speed; crouching helps
+    // the target (smaller profile), so it lowers the chance.
+    let p = 0.55 - dist * 0.011 - foe.speed * 0.035 - (foe.crouch ? 0.06 : 0);
     p = Math.max(0.07, Math.min(0.6, p));
     const hit = random() < p;
     const end = hit ? aim.clone() : aim.clone().add(new THREE.Vector3((random() - 0.5) * 1.6, (random() - 0.5) * 1.2, (random() - 0.5) * 1.6));

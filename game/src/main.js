@@ -422,7 +422,7 @@ function runShot(name) {
   if (name === 'start') {
     sim.state.phase = 'menu';
     player.state.position.set(0, 0, 14.5);
-    player.state.yaw = Math.PI - 0.35;
+    player.state.yaw = 0.3; // face north up the yard (yaw 0 is -z, toward the sites)
     player.state.pitch = -0.04;
     settle(10);
     syncCamera();
@@ -485,7 +485,7 @@ function runShot(name) {
     sim.endRound('us', 'Enemy team eliminated. You take Round 3 — 2 to 1.');
     resetRound();
     player.state.position.set(0, 0, 10);
-    player.state.yaw = Math.PI;
+    player.state.yaw = 0.25; // face north up the yard, not the spawn wall
     settle(10);
     syncCamera();
     hud.showOverlay('end', 'Enemy team eliminated. You take Round 3 — 2 to 1.');

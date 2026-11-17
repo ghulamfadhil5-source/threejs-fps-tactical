@@ -22,7 +22,7 @@ export function createPlayer(colliders, spawn) {
   const body = {
     position: new THREE.Vector3(spawn.x, 0, spawn.z),
     velocity: new THREE.Vector3(),
-    yaw: Math.PI, // face north, toward the sites
+    yaw: 0, // face north, toward the sites (-z): forward is (-sin yaw, 0, -cos yaw)
     pitch: 0,
     eye: EYE_STAND,
     onGround: true,
@@ -82,7 +82,7 @@ export function createPlayer(colliders, spawn) {
   function reset(spawnPoint) {
     body.position.set(spawnPoint.x, 0, spawnPoint.z);
     body.velocity.set(0, 0, 0);
-    body.yaw = Math.PI;
+    body.yaw = 0; // face north, toward the sites
     body.pitch = 0;
     body.crouching = false;
     body.height = HEIGHT;

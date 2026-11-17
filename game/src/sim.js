@@ -144,12 +144,14 @@ export function createSim() {
     } else {
       state.plantProgress = 0;
     }
-    // Elimination wins.
-    if (ctx.enemiesAlive === 0) {
+    // Elimination wins — but not while the charge is live: once the bomb is
+    // planted the round is decided by the blast or the defuse (Counter-Strike
+    // rules), so wiping the defenders must not cut the countdown short.
+    if (!state.bombPlanted && ctx.enemiesAlive === 0) {
       endRound('us', 'Enemy team eliminated.');
       return;
     }
-    if (ctx.playerDead && ctx.alliesAlive === 0) {
+    if (!state.bombPlanted && ctx.playerDead && ctx.alliesAlive === 0) {
       endRound('them', 'Your team was eliminated.');
       return;
     }

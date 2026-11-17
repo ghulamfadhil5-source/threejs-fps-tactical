@@ -38,7 +38,14 @@ export function createInput(canvas, onLockChange) {
 
   return {
     state,
-    requestLock() { canvas.requestPointerLock(); },
+    requestLock() {
+      // requestPointerLock returns a promise in modern Chrome; it rejects
+      // whenever the lock cannot be granted (no user gesture on round changes,
+      // headless browsers, ...). Swallow the rejection — the overlay already
+      // tells the player to click to (re)lock, so a failed request is not an error.
+      const p = canvas.requestPointerLock();
+      if (p && p.catch) p.catch(() => {});
+    },
     takeLook() {
       const x = state.lookX;
       const y = state.lookY;
